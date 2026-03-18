@@ -1,0 +1,26 @@
+name: SwitchBot to Grafana
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  run_script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Run Fetch Script
+        env:
+          SB_TOKEN: ${{ secrets.SB_TOKEN }}
+          SB_SECRET: ${{ secrets.SB_SECRET }}
+          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
+          GRAFANA_USER: ${{ secrets.GRAFANA_USER }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: python fetch_data.py
