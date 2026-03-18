@@ -12,6 +12,7 @@ jobs:
         with:
           python-version: '3.9'
       - run: pip install requests
+      - run: pip install requests prometheus-pb snappy-python
       - name: Run Script
         env:
           SB_TOKEN: ${{ secrets.SB_TOKEN }}
