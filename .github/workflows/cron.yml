@@ -11,8 +11,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      - run: pip install requests
-      - run: pip install requests prometheus-pb snappy-python
+      - run: pip install requests prometheus-pb python-snappy
       - name: Run Script
         env:
           SB_TOKEN: ${{ secrets.SB_TOKEN }}
