@@ -11,12 +11,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
+
       - name: Run pip install
         run: pip install requests
-        env:
+
+      - name: Run Script  # ← これを追加して
+        env:              # envをこの「Run Script」の中に移動します
           SB_TOKEN: ${{ secrets.SB_TOKEN }}
           SB_SECRET: ${{ secrets.SB_SECRET }}
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           GRAFANA_USER: ${{ secrets.GRAFANA_USER }}
           GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
-        run: python fetch_data.py
+        run: python fetch_data.py  # ← インデントを揃える
