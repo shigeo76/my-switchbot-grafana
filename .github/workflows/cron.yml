@@ -1,4 +1,4 @@
-name: SwitchBot to Grafana
+name: SwitchBot to Grafana V2
 
 on:
   schedule:
