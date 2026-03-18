@@ -10,8 +10,17 @@ g_token = os.environ['GRAFANA_TOKEN']
 # 2. SwitchBot 署名作成
 def get_headers():
     t = str(int(time.time() * 1000))
-    sign = base64.b64encode(hmac.new(sb_secret.encode('utf-8'), (sb_token + t).encode('utf-8'), hashlib.sha256).digest()).upper()
-    return {"Authorization": sb_token, "sign": sign, "nonce": "", "t": t, "Content-Type": "application/json"}
+    nonce = "anything"  # 何か文字列が必要
+    data = sb_token + t + nonce
+    # secret を使って HMAC-SHA256 で署名を作る
+    sign = base64.b64encode(hmac.new(sb_secret.encode('utf-8'), data.encode('utf-8'), hashlib.sha256).digest()).upper()
+    return {
+        "Authorization": sb_token,
+        "sign": sign,
+        "nonce": nonce,
+        "t": t,
+        "Content-Type": "application/json; charset=utf8"
+    }
 
 # 3. 会談室の温度計から取得 (ID: C6A83697434C)
 device_id = "C6A83697434C"
