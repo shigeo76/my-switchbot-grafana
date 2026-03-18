@@ -6,7 +6,7 @@ sb_secret = os.environ['SB_SECRET']
 g_url = os.environ['GRAFANA_URL']
 g_user = os.environ['GRAFANA_USER']
 g_token = os.environ['GRAFANA_TOKEN']
-
+remote_write_url = "https://influx-prod-49-prod-ap-northeast-0.grafana.net/api/v1/push"
 # 2. SwitchBot 署名作成
 def get_headers():
     import time, hashlib, hmac, base64
