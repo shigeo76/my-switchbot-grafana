@@ -23,5 +23,6 @@ jobs:
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           GRAFANA_USER: ${{ secrets.GRAFANA_USER }}
           GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         run: python fetch_data.py
-FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
