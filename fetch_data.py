@@ -1,45 +1,29 @@
-import time
-import hashlib
-import hmac
-import base64
-import requests
-import os
+import time, hashlib, hmac, base64, requests, os
 
-# GitHub Secrets から読み込み
-token = os.environ['SB_TOKEN']
-secret = os.environ['SB_SECRET']
-remote_write_url = os.environ['GRAFANA_URL']
-user_id = os.environ['GRAFANA_USER']
-api_token = os.environ['GRAFANA_TOKEN']
+# 1. 認証情報読み込み
+sb_token = os.environ['SB_TOKEN']
+sb_secret = os.environ['SB_SECRET']
+g_url = os.environ['GRAFANA_URL']
+g_user = os.environ['GRAFANA_USER']
+g_token = os.environ['GRAFANA_TOKEN']
 
-# SwitchBot API 認証ヘッダー作成
+# 2. SwitchBot API 署名作成
 def get_headers():
     t = str(int(time.time() * 1000))
-    nonce = ""
-    data = token + t + nonce
-    sign = base64.b64encode(hmac.new(secret.encode('utf-8'), data.encode('utf-8'), hashlib.sha256).digest()).upper()
-    return {"Authorization": token, "sign": sign, "nonce": nonce, "t": t, "Content-Type": "application/json; charset=utf8"}
+    sign = base64.b64encode(hmac.new(sb_secret.encode('utf-8'), (sb_token + t).encode('utf-8'), hashlib.sha256).digest()).upper()
+    return {"Authorization": sb_token, "sign": sign, "nonce": "", "t": t, "Content-Type": "application/json"}
 
-# 1. 会談室の温度計 (C6A83697434C) の状態を直接取得
-# ※さっきのログで判明したIDを直叩きするのが一番確実で速いです
-device_id = "C6A83697434C" 
-url = f"https://api.switch-bot.com/v1.1/devices/{device_id}/status"
-
-res = requests.get(url, headers=get_headers()).json()
+# 3. 会談室の温度計から取得
+device_id = "C6A83697434C"
+res = requests.get(f"https://api.switch-bot.com/v1.1/devices/{device_id}/status", headers=get_headers()).json()
 temp = res['body']['temperature']
 hum = res['body']['humidity']
 
-# 2. Grafana Cloud へ送信 (InfluxDB Line Protocol形式)
-# この1行が「Snappy圧縮不要」の魔法の形式です
-payload = f"switchbot,device={device_id} temperature={temp},humidity={hum}"
-
-response = requests.post(
-    remote_write_url,
-    auth=(user_id, api_token),
-    data=payload
-)
+# 4. Grafana Cloud へ送信 (Influx Line Protocol 形式)
+payload = f"switchbot,device=kaidanshitsu temperature={temp},humidity={hum}"
+response = requests.post(g_url, auth=(g_user, g_token), data=payload)
 
 if response.status_code in [200, 204]:
-    print(f"成功！ 会談室 Temp:{temp} Hum:{hum} (Status:{response.status_code})")
+    print(f"成功！ Temp:{temp} Hum:{hum}")
 else:
-    print(f"失敗: {response.status_code} {response.text}")
+    print(f"失敗:{response.status_code} {response.text}")
