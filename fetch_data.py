@@ -38,18 +38,18 @@ status_res = requests.get(f"https://api.switch-bot.com/v1.1/devices/{target_devi
 temp = status_res['body']['temperature']
 hum = status_res['body']['humidity']
 
-# 3. Grafana Cloud (Prometheus) へ送信 (Simple Remote Write)
-timestamp = int(time.time())
-payload = f"switchbot_temperature{{device_id=\"{target_device_id}\"}} {temp} {timestamp}\nswitchbot_humidity{{device_id=\"{target_device_id}\"}} {hum} {timestamp}\n"
+# 3. Grafana Cloud へ送信 (InfluxDB Line Protocol形式)
+# この形式なら Snappy 圧縮なしでそのまま送れます
+payload = f"switchbot,device_id={target_device_id} temperature={temp},humidity={hum}"
 
 response = requests.post(
     remote_write_url,
     auth=(user_id, api_token),
-    data=payload,
-    headers={'Content-Type': 'text/plain'}
+    data=payload
 )
 
 if response.status_code in [200, 204]:
-    print(f"成功: Temp={temp}, Hum={hum}")
+    print(f"成功: Temp={temp}, Hum={hum} (Status: {response.status_code})")
 else:
-    print(f"失敗: {response.status_code} {response.text}")
+    print(f"失敗: {response.status_code}")
+    print(f"Response: {response.text}")
