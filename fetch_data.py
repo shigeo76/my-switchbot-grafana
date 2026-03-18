@@ -9,11 +9,14 @@ g_token = os.environ['GRAFANA_TOKEN']
 
 # 2. SwitchBot 署名作成
 def get_headers():
+    import time, hashlib, hmac, base64
     t = str(int(time.time() * 1000))
-    nonce = "anything"  # 何か文字列が必要
+    nonce = "anything" # nonceは何でも良いので文字列を入れます
+    
+    # SwitchBot公式の署名作成ルール
     data = sb_token + t + nonce
-    # secret を使って HMAC-SHA256 で署名を作る
     sign = base64.b64encode(hmac.new(sb_secret.encode('utf-8'), data.encode('utf-8'), hashlib.sha256).digest()).upper()
+    
     return {
         "Authorization": sb_token,
         "sign": sign,
