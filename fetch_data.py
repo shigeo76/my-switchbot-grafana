@@ -24,10 +24,11 @@ def get_auth_header():
 base_url = "https://influx-prod-49-prod-ap-northeast-0.grafana.net"
 
 targets = [
-    {"name": "パターン1: /api/v1/push (Text)",      "url": f"{base_url}/api/v1/push",        "ct": "text/plain"},
-    {"name": "パターン2: /api/v1/push/influx (Text)", "url": f"{base_url}/api/v1/push/influx", "ct": "text/plain"},
-    {"name": "パターン3: /api/v1/push (Protobuf)",   "url": f"{base_url}/api/v1/push",        "ct": "application/x-protobuf"},
-    {"name": "パターン4: /influx/v1/push (Text)",     "url": f"{base_url}/influx/v1/push",     "ct": "text/plain"},
+    # 本命：InfluxDB APIの標準的な書き込みパス
+    {"name": "本命: /api/v1/push/influx/write", "url": f"{base_url}/api/v1/push/influx/write", "ct": "text/plain"},
+    
+    # 対抗：v2 APIを模倣したパス
+    {"name": "対抗: /api/v2/write",             "url": f"{base_url}/api/v2/write",             "ct": "text/plain"},
 ]
 
 temp, hum = get_data()
