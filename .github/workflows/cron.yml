@@ -18,7 +18,8 @@ jobs:
         shell: powershell
         run: |
           # 1. SwitchBotからデータ取得
-          $t = [num]::Parse((Get-Date (Get-Date).ToUniversalTime() -UFormat %s)) * 1000
+          $t = [DateTimeOffset]::Now.ToUnixTimeMilliseconds()
+          $t = "$t" # 文字列に変換
           $t = [math]::Floor($t)
           $nonce = "anything"
           $sign_str = "${env:SB_TOKEN}$($t)$($nonce)"
