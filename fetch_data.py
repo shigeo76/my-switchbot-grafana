@@ -6,6 +6,7 @@ g_user = os.environ['GRAFANA_USER']
 g_token = os.environ['GRAFANA_TOKEN']
 g_url = "https://influx-prod-49-prod-ap-northeast-0.grafana.net/api/v1/push/influx/write"
 
+# ターゲット
 target_devices = [
     ("C6A83697434C", "kaidanshitsu"),
     ("CA9D747E5EE7", "kitchen")
@@ -25,28 +26,31 @@ try:
     g_headers = {"Authorization": f"Basic {auth_b64}", "Content-Type": "text/plain"}
 
     for d_id, d_name in target_devices:
-        print(f"--- Processing: {d_name} ---")
+        print(f"\n--- Debug: Processing {d_name} ({d_id}) ---")
         res = requests.get(f"https://api.switch-bot.com/v1.1/devices/{d_id}/status", headers=sb_headers).json()
-        print(f"API Response for {d_name}: {res}") # 生レスポンスを出す
+        print(f"Full API Response: {res}") # 生の返り値を全部出す
         
         body = res.get('body', {})
         if body:
             temp = body.get('temperature')
             hum = body.get('humidity')
+            print(f"Extracted -> Temp: {temp}, Hum: {hum}")
+            
             if temp is not None:
                 line = f"switchbot,device={d_name} temperature={temp},humidity={hum}"
                 all_lines.append(line)
-                print(f"Added to list: {line}")
             else:
-                print(f"Warning: Temperature is None for {d_name}")
+                print(f"!!! Error: Temperature is None for {d_name} !!!")
 
     if all_lines:
         payload = "\n".join(all_lines) + "\n"
-        print("--- Final Sending Payload ---")
+        print("\n--- Final Payload to Send ---")
         print(payload)
         
         g_res = requests.post(g_url, data=payload.encode('utf-8'), headers=g_headers)
         print(f"Grafana Status: {g_res.status_code}")
+    else:
+        print("\n!!! No data collected to send !!!")
 
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"Critical Error: {e}")
