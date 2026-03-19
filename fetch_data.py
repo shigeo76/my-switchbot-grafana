@@ -3,7 +3,7 @@ import time, hashlib, hmac, base64, requests, os
 # 1. 環境変数から認証情報を読み込み
 sb_token = os.environ['SB_TOKEN']
 sb_secret = os.environ['SB_SECRET']
-g_url = os.environ['GRAFANA_URL']
+g_url = "https://influx-prod-49-prod-ap-northeast-0.grafana.net/api/v1/push/influx"
 g_user = os.environ['GRAFANA_USER']
 g_token = os.environ['GRAFANA_TOKEN']
 
@@ -24,7 +24,7 @@ def get_grafana_headers():
     auth_b64 = base64.b64encode(auth_raw.encode('ascii')).decode('ascii')
     return {
         "Authorization": f"Basic {auth_b64}",
-        "Content-Type": "application/x-protobuf",        # これがSnappy誤認を防ぐ鍵
+        "Content-Type": "text/plain",
         "X-Prometheus-Remote-Write-Version": "0.1.0"     # プロトコルを明示
     }
 
