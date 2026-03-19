@@ -21,40 +21,28 @@ def get_sb_headers():
 
 # --- メイン処理 ---
 try:
-    all_lines = []
-    sb_headers = get_sb_headers()
+all_lines = []
+for d_id, d_name in target_devices:
+    print(f"Fetching: {d_name}...")
+    res = requests.get(f"https://api.switch-bot.com/v1.1/devices/{d_id}/status", headers=sb_headers).json()
+    body = res.get('body', {})
     
-    for d_id, d_name in target_devices:
-        print(f"Fetching: {d_name} ({d_id})...")
-        res = requests.get(f"https://api.switch-bot.com/v1.1/devices/{d_id}/status", headers=sb_headers).json()
-        body = res.get('body', {})
-        
-        if body:
-            temp = body.get('temperature')
-            hum = body.get('humidity')
-            bat = body.get('battery')
-            
-            # メトリクス作成
-            metrics = []
-            if temp is not None: metrics.append(f"temperature={temp}")
-            if hum is not None: metrics.append(f"humidity={hum}")
-            if bat is not None: metrics.append(f"battery={bat}")
-            
-            if metrics:
-                # Grafanaに送る1行を作成
-                all_lines.append(f"switchbot,device={d_name} {','.join(metrics)}")
+    if body:
+        temp = body.get('temperature')
+        hum = body.get('humidity')
+        # 文字列として1行作成（末尾に余計なスペースを入れない）
+        line = f"switchbot,device={d_name} temperature={temp},humidity={hum}"
+        all_lines.append(line)
 
-    # 3. Grafanaへ一括送信
-    if all_lines:
-        payload = "\n".join(all_lines)
-        auth_raw = f"{g_user}:{g_token}"
-        auth_b64 = base64.b64encode(auth_raw.encode('ascii')).decode('ascii')
-        g_headers = {"Authorization": f"Basic {auth_b64}", "Content-Type": "text/plain"}
-        
-        g_res = requests.post(g_url, data=payload, headers=g_headers)
-        print(f"Grafana Push Status: {g_res.status_code}")
-        if g_res.status_code == 204:
-            print("Successfully pushed both metrics!")
+# 送信前にログで中身を確認
+if all_lines:
+    # 確実に「改行」で連結する
+    payload = "\n".join(all_lines) + "\n"
+    print(f"--- Sending Payload ---\n{payload}-----------------------")
+    
+    # 送信
+    g_res = requests.post(g_url, data=payload.encode('utf-8'), headers=g_headers)
+    print(f"Grafana Status: {g_res.status_code}")
 
 except Exception as e:
     print(f"Error occurred: {e}")
