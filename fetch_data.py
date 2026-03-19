@@ -19,15 +19,12 @@ def get_sb_headers():
     }
 
 def get_grafana_headers():
-    """PowerShellで成功したBasic認証と特殊ヘッダーを完全再現"""
     auth_raw = f"{g_user}:{g_token}"
     auth_b64 = base64.b64encode(auth_raw.encode('ascii')).decode('ascii')
     return {
         "Authorization": f"Basic {auth_b64}",
-        "Content-Type": "text/plain",
-        "X-Prometheus-Remote-Write-Version": "0.1.0"     # プロトコルを明示
+        "Content-Type": "text/plain" # 余計な application/x-protobuf は消す！
     }
-
 # 2. SwitchBotからデータ取得
 device_id = "C6A83697434C"
 print(f"--- Step 1: SwitchBot API アクセス開始 ---")
