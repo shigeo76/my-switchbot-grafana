@@ -46,4 +46,5 @@ jobs:
             -u "${{ secrets.GRAFANA_USER }}:${{ secrets.GRAFANA_TOKEN }}" \
             -H "Content-Type: application/x-protobuf" \
             -H "X-Prometheus-Remote-Write-Version: 0.1.0" \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
             --data-binary @payload.txt
