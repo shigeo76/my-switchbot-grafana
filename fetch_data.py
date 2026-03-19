@@ -5,36 +5,56 @@ sb_token = os.environ['SB_TOKEN']
 sb_secret = os.environ['SB_SECRET']
 g_user = os.environ['GRAFANA_USER']
 g_token = os.environ['GRAFANA_TOKEN']
-
-# 【正解のURL】
 g_url = "https://influx-prod-49-prod-ap-northeast-0.grafana.net/api/v1/push/influx/write"
 
-# 2. SwitchBotからデータ取得（会談室固定）
-def get_metrics():
+# 2. ターゲットを2つに絞る (デバイスID, Grafana内での名前)
+target_devices = [
+    ("C6A83697434C", "kaidanshitsu"), # 会談室
+    ("CA9D747E5EE7", "kitchen")       # キッチン
+]
+
+def get_sb_headers():
     t = str(int(time.time() * 1000))
     nonce = "anything"
-    string_to_sign = f"{sb_token}{t}{nonce}"
-    sign = base64.b64encode(hmac.new(sb_secret.encode('utf-8'), string_to_sign.encode('utf-8'), hashlib.sha256).digest()).upper()
-    headers = {"Authorization": sb_token, "sign": sign, "nonce": nonce, "t": t}
-    
-    # 会談室のデバイスID
-    res = requests.get("https://api.switch-bot.com/v1.1/devices/C6A83697434C/status", headers=headers).json()
-    return res['body']['temperature'], res['body']['humidity']
+    sign = base64.b64encode(hmac.new(sb_secret.encode('utf-8'), f"{sb_token}{t}{nonce}".encode('utf-8'), hashlib.sha256).digest()).upper()
+    return {"Authorization": sb_token, "sign": sign, "nonce": nonce, "t": t}
 
-# 3. 実行
+# --- メイン処理 ---
 try:
-    temp, hum = get_metrics()
-    # シンプルな形式に戻す
-    payload = f"switchbot,device=kaidanshitsu temperature={temp},humidity={hum}"
+    all_lines = []
+    sb_headers = get_sb_headers()
     
-    auth_b64 = base64.b64encode(f"{g_user}:{g_token}".encode('ascii')).decode('ascii')
-    g_headers = {
-        "Authorization": f"Basic {auth_b64}",
-        "Content-Type": "text/plain"
-    }
-    
-    res = requests.post(g_url, data=payload, headers=g_headers)
-    print(f"Status: {res.status_code} - Data: Temp={temp}, Hum={hum}")
+    for d_id, d_name in target_devices:
+        print(f"Fetching: {d_name} ({d_id})...")
+        res = requests.get(f"https://api.switch-bot.com/v1.1/devices/{d_id}/status", headers=sb_headers).json()
+        body = res.get('body', {})
+        
+        if body:
+            temp = body.get('temperature')
+            hum = body.get('humidity')
+            bat = body.get('battery')
+            
+            # メトリクス作成
+            metrics = []
+            if temp is not None: metrics.append(f"temperature={temp}")
+            if hum is not None: metrics.append(f"humidity={hum}")
+            if bat is not None: metrics.append(f"battery={bat}")
+            
+            if metrics:
+                # Grafanaに送る1行を作成
+                all_lines.append(f"switchbot,device={d_name} {','.join(metrics)}")
+
+    # 3. Grafanaへ一括送信
+    if all_lines:
+        payload = "\n".join(all_lines)
+        auth_raw = f"{g_user}:{g_token}"
+        auth_b64 = base64.b64encode(auth_raw.encode('ascii')).decode('ascii')
+        g_headers = {"Authorization": f"Basic {auth_b64}", "Content-Type": "text/plain"}
+        
+        g_res = requests.post(g_url, data=payload, headers=g_headers)
+        print(f"Grafana Push Status: {g_res.status_code}")
+        if g_res.status_code == 204:
+            print("Successfully pushed both metrics!")
 
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"Error occurred: {e}")
