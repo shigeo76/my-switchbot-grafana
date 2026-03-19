@@ -31,7 +31,7 @@ try:
     
     for device in device_list:
         d_id = device['deviceId']
-        d_name = device['deviceName'].replace(" ", "_") # スペース対策
+        d_name = device['deviceId']
         d_type = device['deviceType']
         
         # 2. 各デバイスの詳細ステータスを取得
