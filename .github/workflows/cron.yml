@@ -5,21 +5,40 @@ on:
   workflow_dispatch:
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest  # PowerShellが一番得意な環境にします
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-
-      - name: Run pip install
-        run: pip install requests
-
-      - name: Run Script  # ← これを追加して
-        env:              # envをこの「Run Script」の中に移動します
+      - name: Run Script
+        env:
           SB_TOKEN: ${{ secrets.SB_TOKEN }}
           SB_SECRET: ${{ secrets.SB_SECRET }}
           GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
           GRAFANA_USER: ${{ secrets.GRAFANA_USER }}
           GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
-        run: python fetch_data.py  # ← インデントを揃える
+        shell: powershell
+        run: |
+          $t = [num]::Parse((Get-Date (Get-Date).ToUniversalTime() -UFormat %s)) * 1000
+          $t = [math]::Floor($t)
+          $nonce = "anything"
+          $sign_str = "${env:SB_TOKEN}$($t)$($nonce)"
+          $hmac = New-Object System.Security.Cryptography.HMACSHA256
+          $hmac.Key = [System.Text.Encoding]::UTF8.GetBytes("${env:SB_SECRET}")
+          $sign = [Convert]::ToBase64String($hmac.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($sign_str))).ToUpper()
+
+          $sb_headers = @{ "Authorization" = "${env:SB_TOKEN}"; "sign" = $sign; "nonce" = $nonce; "t" = "$t" }
+          $res = Invoke-RestMethod -Uri "https://api.switch-bot.com/v1.1/devices/C6A83697434C/status" -Headers $sb_headers
+          
+          if ($res.statusCode -eq 100) {
+              $temp = $res.body.temperature
+              $hum = $res.body.humidity
+              $payload = "switchbot,device=kaidanshitsu temperature=$temp,humidity=$hum"
+              
+              $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${env:GRAFANA_USER}:${env:GRAFANA_TOKEN}"))
+              $g_headers = @{ 
+                  "Authorization" = "Basic $auth"
+                  "Content-Type" = "application/x-protobuf"
+                  "X-Prometheus-Remote-Write-Version" = "0.1.0"
+              }
+              
+              $g_res = Invoke-WebRequest -Uri "${env:GRAFANA_URL}" -Method Post -Headers $g_headers -Body $payload
+              Write-Host "Success! Status: $($g_res.StatusCode)"
+          }
