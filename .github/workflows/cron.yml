@@ -1,8 +1,5 @@
 name: SwitchBot-Push
-on:
-  schedule:
-    - cron: '*/* * * * *'
-  workflow_dispatch:
+
 
 jobs:
   run:
