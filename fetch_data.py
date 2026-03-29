@@ -43,6 +43,8 @@ try:
         payload = "\n".join(all_lines) + "\n"
         g_res = requests.post(g_url, data=payload.encode('utf-8'), headers=g_headers)
         print(f"Grafana Status: {g_res.status_code} (Success if 204)")
+        if g_res.status_code != 204:
+            print(f"Response: {g_res.text}") # エラー内容を表示
 
 except Exception as e:
     print(f"Error: {e}")
