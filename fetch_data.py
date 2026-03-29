@@ -5,7 +5,7 @@ sb_token = os.environ['SB_TOKEN']
 sb_secret = os.environ['SB_SECRET']
 g_user = os.environ['GRAFANA_USER']
 g_token = os.environ['GRAFANA_TOKEN']
-g_url = "https://influx-prod-49-prod-ap-northeast-0.grafana.net/api/v1/push/influx/write"
+g_url = os.environ['GRAFANA_URL']
 
 # 2. 確定した正しいIDをセット
 target_devices = [
