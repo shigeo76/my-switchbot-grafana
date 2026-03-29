@@ -10,7 +10,7 @@ g_url = os.environ['GRAFANA_URL']
 # 2. 確定した正しいIDをセット
 target_devices = [
     ("C6A83697434C", "kaidanshitsu"), # 会談室
-    ("DE2A338AE1E6", "kitchen")      # キッチン
+    ("DE2A338AE1E6", "kitchen"),     # キッチン
     ("E876C6462F2B", "Outside")      # 屋外
 ]
 
