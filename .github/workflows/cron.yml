@@ -18,7 +18,6 @@ jobs:
         env:
           SB_TOKEN: ${{ secrets.SB_TOKEN }}
           SB_SECRET: ${{ secrets.SB_SECRET }}
-          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
-          GRAFANA_USER: ${{ secrets.GRAFANA_USER }}
-          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
-        run: python fetch_data.py  # ここでPythonを呼ぶように戻す
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python fetch_data.py
