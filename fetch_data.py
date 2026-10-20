@@ -3,15 +3,14 @@ import time, hashlib, hmac, base64, requests, os
 # 1. 認証情報の読み込み
 sb_token = os.environ['SB_TOKEN']
 sb_secret = os.environ['SB_SECRET']
-g_user = os.environ['GRAFANA_USER']
-g_token = os.environ['GRAFANA_TOKEN']
-g_url = os.environ['GRAFANA_URL']
+supabase_url = os.environ['SUPABASE_URL']
+supabase_key = os.environ['SUPABASE_KEY']
 
 # 2. 確定した正しいIDをセット
 target_devices = [
     ("C6A83697434C", "kaidanshitsu"), # 会談室
-    ("DE2A338AE1E6", "kitchen"),     # キッチン
-    ("E876C6462F2B", "Outside")      # 屋外
+    ("DE2A338AE1E6", "kitchen"),      # キッチン
+    ("E876C6462F2B", "Outside")       # 屋外
 ]
 
 def get_sb_headers():
@@ -22,11 +21,8 @@ def get_sb_headers():
 
 # --- メイン処理 ---
 try:
-    all_lines = []
+    records = []
     sb_headers = get_sb_headers()
-    
-    auth_b64 = base64.b64encode(f"{g_user}:{g_token}".encode('ascii')).decode('ascii')
-    g_headers = {"Authorization": f"Basic {auth_b64}", "Content-Type": "text/plain"}
 
     for d_id, d_name in target_devices:
         print(f"Fetching: {d_name} ({d_id})...")
@@ -37,15 +33,25 @@ try:
             temp = body.get('temperature')
             hum = body.get('humidity')
             if temp is not None:
-                all_lines.append(f"switchbot,device={d_name} temperature={temp},humidity={hum}")
+                records.append({
+                    "device": d_name,
+                    "temperature": temp,
+                    "humidity": hum
+                })
 
-    # 3. Grafanaへ一括送信
-    if all_lines:
-        payload = "\n".join(all_lines) + "\n"
-        g_res = requests.post(g_url, data=payload.encode('utf-8'), headers=g_headers)
-        print(f"Grafana Status: {g_res.status_code} (Success if 204)")
-        if g_res.status_code != 204:
-            print(f"Response: {g_res.text}") # エラー内容を表示
+    # 3. Supabase REST APIへ一括送信
+    if records:
+        sp_headers = {
+            "apikey": supabase_key,
+            "Authorization": f"Bearer {supabase_key}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+        }
+        post_url = f"{supabase_url}/rest/v1/switchbot_metrics"
+        r = requests.post(post_url, headers=sp_headers, json=records)
+        print(f"Supabase Status: {r.status_code} (Success if 201)")
+        if r.status_code != 201:
+            print(f"Response: {r.text}")
 
 except Exception as e:
     print(f"Error: {e}")
